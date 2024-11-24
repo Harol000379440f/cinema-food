@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'co.bebolder'
+version = computeVersion()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+springBoot {
+    buildInfo()
+}
+
+// Functions for calculate the correct version for the development enviroment
+def computeVersion() {
+    def env = System.getenv('ENV') ?: 'DEV' // Read  the development enviroment and create the .jar 
+    def baseVersion = '0.0.1'
+    switch (env.toUpperCase()) {
+        case 'DEV':
+            return "${baseVersion}-SNAPSHOT"
+        case 'QA':
+            return "${baseVersion}-PRERELEASE"
+        case 'PROD':
+            return baseVersion
+        default:
+            throw new IllegalArgumentException("Ambiente no soportado: ${env}")
+    }
+}
+

@@ -1,0 +1,3 @@
+Nachos,30
+Popcorn,50
+Soda,100
