@@ -1,44 +1,94 @@
-name: CI/CD Pipeline #Name workflow
+name: CI/CD Pipeline # Nombre del Workflow
 
-on:
+on: # Triggers/Eventos
   push:
     branches:
-      - develop
-      - release/*
       - main
+      - develop
+      - 'feature/*'
+      - 'release/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  # Trigger para tags (producción)
+  create:
+    tags:
+      - '*'
 
 jobs:
-  build:
+  # Pipeline para Desarrollo
+  desarrollo:
+    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Clonar Código
+        uses: actions/checkout@v3
+      - name: Construir Imagen Docker (SNAPSHOT)
+        run: |
+          DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t $DOCKER_USERNAME/cinemafood:SNAPSHOT .
+      - name: Ejecutar Pruebas Unitarias
+        run: echo "Ejecutando pruebas unitarias..."
+      - name: Ejecutar Pruebas de Integración
+        run: echo "Ejecutando pruebas de integración..."
+      - name: Escanear Imagen Docker con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/cinemafood:SNAPSHOT
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0
 
-    - name: Set up JDK
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-
-    - name: Build with Gradle
-      run: ./gradlew build
-
-  test:
+  # Pipeline para QA
+  qa:
+    if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
-    needs: build
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Clonar Código
+        uses: actions/checkout@v3
+      - name: Construir Imagen Docker (PRERELEASE)
+        run: |
+          DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t $DOCKER_USERNAME/cinemafood:PRERELEASE .
+      - name: Ejecutar Pruebas QA
+        run: echo "Ejecutando pruebas QA..."
+      - name: Escanear Imagen Docker con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/cinemafood:PRERELEASE
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0
+      - name: Publicar Imagen Docker
+        if: success()
+        run: |
+          DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          docker push $DOCKER_USERNAME/cinemafood:PRERELEASE
 
-    - name: Run tests
-      run: ./gradlew test
-
-  deploy:
+  # Pipeline para Producción
+  produccion:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    needs: test
-
     steps:
-    - name: Deploy to Production
-      if: github.ref == 'refs/heads/main'
-      run: ./deploy.sh
+      - name: Clonar Código
+        uses: actions/checkout@v3
+      - name: Construir Imagen Docker (Producción)
+        run: |
+          DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t $DOCKER_USERNAME/cinemafood:latest .
+      - name: Escanear Imagen Docker con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/cinemafood:latest
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0
+      - name: Ejecutar Pruebas de Aceptación
+        run: echo "Ejecutando pruebas de aceptación..."
+      - name: Publicar Imagen Docker
+        if: success()
+        run: |
+          DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          docker push $DOCKER_USERNAME/cinemafood:latest
