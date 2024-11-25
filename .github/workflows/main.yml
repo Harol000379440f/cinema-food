@@ -24,6 +24,9 @@ jobs:
     steps:
       - name: Clonar Código
         uses: actions/checkout@v3
+      - name: Iniciar sesión en Docker
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
       - name: Construir Imagen Docker (SNAPSHOT)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
@@ -47,6 +50,9 @@ jobs:
     steps:
       - name: Clonar Código
         uses: actions/checkout@v3
+      - name: Iniciar sesión en Docker
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
       - name: Construir Imagen Docker (PRERELEASE)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
@@ -73,6 +79,9 @@ jobs:
     steps:
       - name: Clonar Código
         uses: actions/checkout@v3
+      - name: Iniciar sesión en Docker
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
       - name: Construir Imagen Docker (Producción)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
