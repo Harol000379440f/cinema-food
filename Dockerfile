@@ -12,7 +12,7 @@ WORKDIR /app
 COPY . .
 
 # Dar permisos de ejecución al archivo gradlew
-RUN chmod +x ./gradlew
+RUN chmod +x /app/gradlew
 
 # Construir el archivo .jar usando Gradle
 RUN ./gradlew clean bootJar --no-daemon
