@@ -1,6 +1,6 @@
-name: CI/CD Pipeline # Nombre del Workflow
+name: CI/CD Pipeline
 
-on: # Triggers/Eventos
+on:
   push:
     branches:
       - main
@@ -12,7 +12,6 @@ on: # Triggers/Eventos
       - main
       - develop
 
-  # Trigger para tags (producción)
   create:
     tags:
       - '*'
@@ -28,7 +27,7 @@ jobs:
       - name: Construir Imagen Docker (SNAPSHOT)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t $DOCKER_USERNAME/cinemafood:SNAPSHOT .
+          docker build --build-arg ENV=DEV -t $DOCKER_USERNAME/cinemafood:SNAPSHOT .
       - name: Ejecutar Pruebas Unitarias
         run: echo "Ejecutando pruebas unitarias..."
       - name: Ejecutar Pruebas de Integración
@@ -51,7 +50,7 @@ jobs:
       - name: Construir Imagen Docker (PRERELEASE)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t $DOCKER_USERNAME/cinemafood:PRERELEASE .
+          docker build --build-arg ENV=QA -t $DOCKER_USERNAME/cinemafood:PRERELEASE .
       - name: Ejecutar Pruebas QA
         run: echo "Ejecutando pruebas QA..."
       - name: Escanear Imagen Docker con Trivy
@@ -77,7 +76,7 @@ jobs:
       - name: Construir Imagen Docker (Producción)
         run: |
           DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
-          docker build -t $DOCKER_USERNAME/cinemafood:latest .
+          docker build --build-arg ENV=PROD -t $DOCKER_USERNAME/cinemafood:latest .
       - name: Escanear Imagen Docker con Trivy
         uses: aquasecurity/trivy-action@master
         with:
