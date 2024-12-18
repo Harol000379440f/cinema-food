@@ -1,22 +1,22 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline  #Name Workflow
 
-on:
-  push:
+on:  #tregger/event 
+  push:  #1
     branches:
       - main
       - develop
       - 'feature/*'
       - 'release/*'
-  pull_request:
+  pull_request: #2
     branches:
       - main
       - develop
 
-  create:
+  create: #3
     tags:
       - '*'
 
-jobs:
+jobs: 
   # Pipeline para Desarrollo
   desarrollo:
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')
